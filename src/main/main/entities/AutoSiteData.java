@@ -12,7 +12,7 @@ public class AutoSiteData {
 
     private LocalDate publicationDate;
 
-    private main.entities.AuthorData author;
+    private String author;
 
     private String text;
 
@@ -70,11 +70,11 @@ public class AutoSiteData {
         return publicationDate;
     }
 
-    public void setAuthor(AuthorData author) {
+    public void setAuthor(String author) {
         this.author = author;
     }
 
-    public AuthorData getAuthor() {
+    public String getAuthor() {
         return author;
     }
 

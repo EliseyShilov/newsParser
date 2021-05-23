@@ -3,7 +3,6 @@ package main.robots;
 import com.sun.org.slf4j.internal.Logger;
 import com.sun.org.slf4j.internal.LoggerFactory;
 import main.dao.AutoSiteDao;
-import main.entities.AuthorData;
 import main.entities.AutoSiteData;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class ZrRobot {
@@ -57,19 +57,27 @@ public class ZrRobot {
                     pageCounter++;
                 }
 
-                RestHighLevelClient restClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost",9200)));
+                RestHighLevelClient restClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200)));
                 AutoSiteDao dao = new AutoSiteDao();
                 for (AutoSiteData dataForSave : siteData) {
                     dao.saveData(restClient, dataForSave);
                 }
 
+                testSearch(restClient, dao);
                 restClient.close();
-                getStat(siteData);
+                //getStat(siteData);
                 log.debug("Zr update finished");
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
         }, "ZrUpdateThread").start();
+    }
+
+    private void testSearch(RestHighLevelClient client, AutoSiteDao dao) throws IOException {
+        List<AutoSiteData> dataById = dao.getArticlesById(client, "4767f89f1e74a19b21e084002fc826f47acb94b28395a58c22add7b19b34f140");
+        List<AutoSiteData> dataByTitle = dao.getArticleByTitle(client, "Вашу машину подрезали — реагировать будете? Опрос");
+        List<AutoSiteData> dataByAuthor = dao.getArticlesByAuthor(client, "Александр Хлынов");
+
     }
 
     private void parseArticle(CloseableHttpClient client, String link, AutoSiteData data) throws IOException {
@@ -82,9 +90,7 @@ public class ZrRobot {
             log.warn("Can't find header in article " + link);
 
         if (doc.getElementsByClass("info__author").size() > 0) {
-            AuthorData author = new AuthorData();
-            author.setFio(doc.getElementsByClass("info__author").first().text());
-            data.setAuthor(author);
+            data.setAuthor(doc.getElementsByClass("info__author").first().text());
         } else
             log.warn("Can't find info about author in article " + link);
 
