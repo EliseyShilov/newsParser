@@ -73,9 +73,10 @@ public class AutoSiteDao {
         SearchRequest sr = new SearchRequest(INDEX_NAME);
         SearchSourceBuilder ssb = new SearchSourceBuilder();
         if (content == null || fieldName == null)
-            ssb.query(QueryBuilders.matchAllQuery());
+            ssb.query(QueryBuilders.matchAllQuery())
+                    .size(10000);
         else
-            ssb.query(QueryBuilders.matchQuery(content, fieldName));
+            ssb.query(QueryBuilders.matchQuery(fieldName, content));
         sr.source(ssb);
         SearchResponse response = client.search(sr, RequestOptions.DEFAULT);
         return responseToData(response);

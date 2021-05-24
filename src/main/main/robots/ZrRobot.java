@@ -51,15 +51,15 @@ public class ZrRobot {
                         String link = "https://www.zr.ru" + articleBlock.getElementsByTag("a").first().attr("href");
                         AutoSiteData data = new AutoSiteData();
                         data.setSource(AutoSiteData.Source.ZR);
-                        siteData.add(data);
                         parseArticle(client, link, data);
+                        siteData.add(data);
                     }
                     pageCounter++;
                 }
 
                 RestHighLevelClient restClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200)));
                 AutoSiteDao dao = new AutoSiteDao();
-                dao.deleteAllData(restClient);
+                //dao.deleteAllData(restClient);
                 for (AutoSiteData dataForSave : siteData) {
                     dao.saveData(restClient, dataForSave);
                 }
@@ -75,13 +75,11 @@ public class ZrRobot {
     }
 
     private void testSearch(RestHighLevelClient client, AutoSiteDao dao) throws IOException, InterruptedException {
-        Thread.sleep(5000);
         List<AutoSiteData> allArticles = dao.getAllArticles(client);
-        List<AutoSiteData> dataById = dao.getArticlesById(client, "4767f89f1e74a19b21e084002fc826f47acb94b28395a58c22add7b19b34f140");
-        List<AutoSiteData> dataByTitle = dao.getArticleByTitle(client, "Илон Маск анонсировал появление Tesla в России");
+        List<AutoSiteData> dataById = dao.getArticlesById(client, "21f28a1e8de738c52bee7a8166165cf0b1a08860e3b60ab13ce76421ef292901");
+        List<AutoSiteData> dataByTitle = dao.getArticleByTitle(client, "уклонистов");
         List<AutoSiteData> dataByAuthor = dao.getArticlesByAuthor(client, "Иннокентий Кишкурно");
         log.debug("End search test");
-
     }
 
     private void parseArticle(CloseableHttpClient client, String link, AutoSiteData data) throws IOException {
