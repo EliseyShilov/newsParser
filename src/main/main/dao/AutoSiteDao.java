@@ -7,6 +7,7 @@ import com.sun.org.slf4j.internal.Logger;
 import com.sun.org.slf4j.internal.LoggerFactory;
 import main.entities.AutoSiteData;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -47,6 +48,10 @@ public class AutoSiteDao {
         }
     }
 
+    public List<AutoSiteData> getAllArticles(RestHighLevelClient client) throws IOException {
+        return search(client, null, null);
+    }
+
     public List<AutoSiteData> getArticlesById(RestHighLevelClient client, String id) throws IOException {
         return search(client, id, "_id");
     }
@@ -59,10 +64,18 @@ public class AutoSiteDao {
         return search(client, author, "author");
     }
 
+    public void deleteAllData(RestHighLevelClient client) throws IOException {
+        DeleteIndexRequest request = new DeleteIndexRequest(INDEX_NAME);
+        client.indices().delete(request, RequestOptions.DEFAULT);
+    }
+
     private List<AutoSiteData> search(RestHighLevelClient client, String content, String fieldName) throws IOException {
         SearchRequest sr = new SearchRequest(INDEX_NAME);
         SearchSourceBuilder ssb = new SearchSourceBuilder();
-        ssb.query(QueryBuilders.matchQuery(content, fieldName));
+        if (content == null || fieldName == null)
+            ssb.query(QueryBuilders.matchAllQuery());
+        else
+            ssb.query(QueryBuilders.matchQuery(content, fieldName));
         sr.source(ssb);
         SearchResponse response = client.search(sr, RequestOptions.DEFAULT);
         return responseToData(response);
@@ -77,8 +90,15 @@ public class AutoSiteDao {
             data.setTitle((String) sourceAsMap.get("title"));
             data.setLink((String) sourceAsMap.get("link"));
             data.setText((String) sourceAsMap.get("text"));
-            data.setPublicationDate(((String) sourceAsMap.get("publicationDate")).matches("\\d\\d.\\d\\d.\\d\\d\\d\\d") ? LocalDate.parse((String) sourceAsMap.get("publicationDate"), formatter) : null);
-            //data.setAuthor((String) sourceAsMap.get("author"));
+            data.setAuthor((String) sourceAsMap.get("author"));
+            Map publicationDate = (Map) sourceAsMap.get("publicationDate");
+            if (publicationDate != null) {
+                int year = (int) publicationDate.get("year");
+                int month = (int) publicationDate.get("monthValue");
+                int day = (int) publicationDate.get("dayOfMonth");
+                String publicationDateStr = day + "." + (String.valueOf(month).length() == 1 ? "0" + month : month) + "." + year;
+                data.setPublicationDate(LocalDate.parse(publicationDateStr, formatter));
+            }
             switch ((String) sourceAsMap.get("source")) {
                 case "ZR":
                     data.setSource(AutoSiteData.Source.ZR);

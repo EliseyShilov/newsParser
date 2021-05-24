@@ -37,7 +37,7 @@ public class ZrRobot {
             try (CloseableHttpClient client = HttpClients.createDefault()) {
                 int pageCounter = 0;
                 Set<AutoSiteData> siteData = new HashSet<>();
-                while (pageCounter < 1) {
+                while (pageCounter < 2) {
                     HttpResponse pageResponse = client.execute(new HttpGet("https://www.zr.ru/news/?p=" + pageCounter));
                     Document doc = Jsoup.parse(EntityUtils.toString(pageResponse.getEntity()));
                     Elements articleBlocks = doc.getElementsByTag("article");
@@ -59,6 +59,7 @@ public class ZrRobot {
 
                 RestHighLevelClient restClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200)));
                 AutoSiteDao dao = new AutoSiteDao();
+                dao.deleteAllData(restClient);
                 for (AutoSiteData dataForSave : siteData) {
                     dao.saveData(restClient, dataForSave);
                 }
@@ -73,10 +74,13 @@ public class ZrRobot {
         }, "ZrUpdateThread").start();
     }
 
-    private void testSearch(RestHighLevelClient client, AutoSiteDao dao) throws IOException {
+    private void testSearch(RestHighLevelClient client, AutoSiteDao dao) throws IOException, InterruptedException {
+        Thread.sleep(5000);
+        List<AutoSiteData> allArticles = dao.getAllArticles(client);
         List<AutoSiteData> dataById = dao.getArticlesById(client, "4767f89f1e74a19b21e084002fc826f47acb94b28395a58c22add7b19b34f140");
-        List<AutoSiteData> dataByTitle = dao.getArticleByTitle(client, "Вашу машину подрезали — реагировать будете? Опрос");
-        List<AutoSiteData> dataByAuthor = dao.getArticlesByAuthor(client, "Александр Хлынов");
+        List<AutoSiteData> dataByTitle = dao.getArticleByTitle(client, "Илон Маск анонсировал появление Tesla в России");
+        List<AutoSiteData> dataByAuthor = dao.getArticlesByAuthor(client, "Иннокентий Кишкурно");
+        log.debug("End search test");
 
     }
 
