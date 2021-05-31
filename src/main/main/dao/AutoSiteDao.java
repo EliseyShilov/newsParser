@@ -17,6 +17,8 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.metrics.Cardinality;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
@@ -37,7 +39,12 @@ public class AutoSiteDao {
     public void saveData(RestHighLevelClient client, AutoSiteData data) {
         try {
             IndexRequest request = new IndexRequest(INDEX_NAME);
-            request.id(sha256Hex(data.getText()));
+            if (data.getText() != null)
+                request.id(sha256Hex(data.getText()));
+            else {
+                log.error("Can't find text in data!");
+                return;
+            }
             request.source(toJson(data), XContentType.JSON);
 
             IndexResponse response = client.index(request, RequestOptions.DEFAULT);
@@ -69,15 +76,26 @@ public class AutoSiteDao {
         client.indices().delete(request, RequestOptions.DEFAULT);
     }
 
+    public void getAggregationByCount(RestHighLevelClient client, String field) throws IOException {
+        String value = "agg_" + field;
+        SearchRequest sr = new SearchRequest(INDEX_NAME);
+        SearchSourceBuilder ssb = new SearchSourceBuilder();
+        ssb.query(QueryBuilders.matchAllQuery());
+        ssb.aggregation(AggregationBuilders.cardinality(value).field(field));
+        sr.source(ssb.size(1000));
+        SearchResponse response = client.search(sr, RequestOptions.DEFAULT);
+        Cardinality cardinality = response.getAggregations().get(value);
+        System.out.println("Cardinality for " + field + ": " + cardinality.getValue());
+    }
+
     private List<AutoSiteData> search(RestHighLevelClient client, String content, String fieldName) throws IOException {
         SearchRequest sr = new SearchRequest(INDEX_NAME);
         SearchSourceBuilder ssb = new SearchSourceBuilder();
         if (content == null || fieldName == null)
-            ssb.query(QueryBuilders.matchAllQuery())
-                    .size(10000);
+            ssb.query(QueryBuilders.matchAllQuery());
         else
             ssb.query(QueryBuilders.matchQuery(fieldName, content));
-        sr.source(ssb);
+        sr.source(ssb.size(1000));
         SearchResponse response = client.search(sr, RequestOptions.DEFAULT);
         return responseToData(response);
     }
@@ -116,3 +134,5 @@ public class AutoSiteDao {
         return ow.writeValueAsString(data);
     }
 }
+
+

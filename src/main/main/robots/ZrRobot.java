@@ -66,7 +66,7 @@ public class ZrRobot {
 
                 testSearch(restClient, dao);
                 restClient.close();
-                //getStat(siteData);
+
                 log.debug("Zr update finished");
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
@@ -74,7 +74,8 @@ public class ZrRobot {
         }, "ZrUpdateThread").start();
     }
 
-    private void testSearch(RestHighLevelClient client, AutoSiteDao dao) throws IOException, InterruptedException {
+    private void testSearch(RestHighLevelClient client, AutoSiteDao dao) throws IOException {
+        dao.getAggregationByCount(client,"author");
         List<AutoSiteData> allArticles = dao.getAllArticles(client);
         List<AutoSiteData> dataById = dao.getArticlesById(client, "21f28a1e8de738c52bee7a8166165cf0b1a08860e3b60ab13ce76421ef292901");
         List<AutoSiteData> dataByTitle = dao.getArticleByTitle(client, "уклонистов");
@@ -109,32 +110,5 @@ public class ZrRobot {
             data.setText(doc.getElementsByClass("content").first().text());
         else
             log.warn("Can't find text in article " + link);
-    }
-
-    private void getStat(Set<AutoSiteData> siteData) {
-        int VwCount = 0;
-        int SkodaCount = 0;
-        int MitsuCount = 0;
-        int RenaultCount = 0;
-        int LadaCount = 0;
-        int UazCount = 0;
-        for (AutoSiteData data : siteData) {
-            if (data.getTags().contains(AutoSiteData.Tag.VW))
-                VwCount++;
-            else if (data.getTags().contains(AutoSiteData.Tag.SKODA))
-                SkodaCount++;
-            else if (data.getTags().contains(AutoSiteData.Tag.RENAULT))
-                RenaultCount++;
-            else if (data.getTags().contains(AutoSiteData.Tag.MITSUBISHI))
-                MitsuCount++;
-            else if (data.getTags().contains(AutoSiteData.Tag.LADA))
-                LadaCount++;
-        }
-        System.out.println("Final stat:\nTotal count: " + siteData.size() + "\nVW: " + VwCount + ", " + (float) ((VwCount * 100) / siteData.size()) + "%");
-        System.out.println("Skoda: " + SkodaCount + ", " + ((SkodaCount * 100) / siteData.size()) + "%");
-        System.out.println("Mitshubishi: " + MitsuCount + ", " + ((MitsuCount * 100) / siteData.size()) + "%");
-        System.out.println("Renault: " + RenaultCount + ", " + ((RenaultCount * 100) / siteData.size()) + "%");
-        System.out.println("Lada: " + LadaCount + ", " + ((LadaCount * 100) / siteData.size()) + "%");
-        System.out.println("Best cars: " + UazCount + ", " + ((UazCount * 100) / siteData.size()) + "%");
     }
 }
