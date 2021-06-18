@@ -77,14 +77,14 @@ public class AutoSiteDao {
     }
 
     public void getAggregationByCount(RestHighLevelClient client, String field) throws IOException {
-        String value = "agg_" + field;
+        String name = "agg_" + field;
         SearchRequest sr = new SearchRequest(INDEX_NAME);
         SearchSourceBuilder ssb = new SearchSourceBuilder();
         ssb.query(QueryBuilders.matchAllQuery());
-        ssb.aggregation(AggregationBuilders.cardinality(value).field(field));
+        ssb.aggregation(AggregationBuilders.cardinality(name).field(field));
         sr.source(ssb.size(1000));
         SearchResponse response = client.search(sr, RequestOptions.DEFAULT);
-        Cardinality cardinality = response.getAggregations().get(value);
+        Cardinality cardinality = response.getAggregations().get(name);
         System.out.println("Cardinality for " + field + ": " + cardinality.getValue());
     }
 
@@ -115,15 +115,17 @@ public class AutoSiteDao {
                 int year = (int) publicationDate.get("year");
                 int month = (int) publicationDate.get("monthValue");
                 int day = (int) publicationDate.get("dayOfMonth");
-                String publicationDateStr = day + "." + (String.valueOf(month).length() == 1 ? "0" + month : month) + "." + year;
+                String publicationDateStr = (String.valueOf(day).length() == 1 ? "0" + day : day) + "." + (String.valueOf(month).length() == 1 ? "0" + month : month) + "." + year;
                 data.setPublicationDate(LocalDate.parse(publicationDateStr, formatter));
             }
-            switch ((String) sourceAsMap.get("source")) {
-                case "ZR":
-                    data.setSource(AutoSiteData.Source.ZR);
-                    break;
-                case "AR":
-                    data.setSource(AutoSiteData.Source.AR);
+            if (sourceAsMap.get("source") != null) {
+                switch ((String) sourceAsMap.get("source")) {
+                    case "ZR":
+                        data.setSource(AutoSiteData.Source.ZR);
+                        break;
+                    case "AR":
+                        data.setSource(AutoSiteData.Source.AR);
+                }
             }
         }
         return dataList;

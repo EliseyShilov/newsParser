@@ -4,6 +4,7 @@ import com.sun.org.slf4j.internal.Logger;
 import com.sun.org.slf4j.internal.LoggerFactory;
 import main.dao.AutoSiteDao;
 import main.entities.AutoSiteData;
+import main.tools.TextTools;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -20,9 +21,8 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class ZrRobot {
 
@@ -30,14 +30,17 @@ public class ZrRobot {
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
+    public ZrRobot() {
+    }
+
     public void updateZr() {
         log.debug("Zr update started");
 
         new Thread(() -> {
             try (CloseableHttpClient client = HttpClients.createDefault()) {
                 int pageCounter = 0;
-                Set<AutoSiteData> siteData = new HashSet<>();
-                while (pageCounter < 2) {
+                List<AutoSiteData> siteData = new ArrayList<>();
+                while (pageCounter < 1) {
                     HttpResponse pageResponse = client.execute(new HttpGet("https://www.zr.ru/news/?p=" + pageCounter));
                     Document doc = Jsoup.parse(EntityUtils.toString(pageResponse.getEntity()));
                     Elements articleBlocks = doc.getElementsByTag("article");
@@ -59,11 +62,8 @@ public class ZrRobot {
 
                 RestHighLevelClient restClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200)));
                 AutoSiteDao dao = new AutoSiteDao();
-                //dao.deleteAllData(restClient);
-                for (AutoSiteData dataForSave : siteData) {
-                    dao.saveData(restClient, dataForSave);
-                }
 
+                testMinHash(siteData);
                 testSearch(restClient, dao);
                 restClient.close();
 
@@ -75,12 +75,26 @@ public class ZrRobot {
     }
 
     private void testSearch(RestHighLevelClient client, AutoSiteDao dao) throws IOException {
-        dao.getAggregationByCount(client,"author");
+        dao.getAggregationByCount(client, "author");
         List<AutoSiteData> allArticles = dao.getAllArticles(client);
         List<AutoSiteData> dataById = dao.getArticlesById(client, "21f28a1e8de738c52bee7a8166165cf0b1a08860e3b60ab13ce76421ef292901");
-        List<AutoSiteData> dataByTitle = dao.getArticleByTitle(client, "уклонистов");
+        List<AutoSiteData> dataByTitle = dao.getArticleByTitle(client, "DFM");
         List<AutoSiteData> dataByAuthor = dao.getArticlesByAuthor(client, "Иннокентий Кишкурно");
         log.debug("End search test");
+    }
+
+    private void testMinHash(List<AutoSiteData> siteData) throws IOException {
+        TextTools textTools = new TextTools();
+        List<String> normalWords = textTools.textToNormalForm(siteData.get(2));
+        List<List<String>> shingles = textTools.getShingles(normalWords, 10);
+        Integer hash = textTools.getMinHash(shingles);
+
+        List<String> normalWords1 = textTools.textToNormalForm(siteData.get(3));
+        List<List<String>> shingles1 = textTools.getShingles(normalWords1, 10);
+        Integer hash1 = textTools.getMinHash(shingles1);
+        double jacarta = textTools.jacarta(hash, hash1);
+
+        System.out.println("For articles: \"" + siteData.get(0).getTitle() + "\" and \"" + siteData.get(1).getTitle() + "\" Jacarta coefficient is " + jacarta);
     }
 
     private void parseArticle(CloseableHttpClient client, String link, AutoSiteData data) throws IOException {
