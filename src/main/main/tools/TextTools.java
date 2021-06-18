@@ -60,7 +60,7 @@ public class TextTools {
                 for (String word : shingle) {
                     sb.append(word);
                 }
-                hashes.add(strHash(sb.toString(),32));
+                hashes.add(strHash(sb.toString(), i));
             }
         }
         return Collections.min(hashes);
