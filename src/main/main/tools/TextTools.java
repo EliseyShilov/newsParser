@@ -1,92 +1,59 @@
 package main.tools;
 
+
+import company.evo.jmorphy2.MorphAnalyzer;
+import company.evo.jmorphy2.ParsedWord;
+import company.evo.jmorphy2.ResourceFileLoader;
+import company.evo.jmorphy2.Tag;
+import lombok.extern.log4j.Log4j;
 import main.entities.NewsSiteData;
-import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
-//import org.apache.lucene.morphology.russian.RussianMorphology;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
+@Log4j
 public class TextTools {
-    //RussianMorphology rm = new RussianMorphology();
-    RussianAnalyzer ra = new RussianAnalyzer();
+    private static MorphAnalyzer morph = null;
+    private static RussianAnalyzer ra = new RussianAnalyzer();
 
-    public TextTools() throws IOException {
+    public void init() {
+        try {
+            morph = new MorphAnalyzer.Builder()
+                    .fileLoader(new ResourceFileLoader(String.format("/company/evo/jmorphy2/%s/pymorphy2_dicts", "ru")))
+                    .charSubstitutes(null)
+                    .cacheSize(0)
+                    .build();
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
     }
 
     public List<String> textToNormalForm(NewsSiteData data) {
-        String bufText = data.getText();
-        String[] wordsList = bufText.toLowerCase().replaceAll("[^а-яёa-z ]", "").split(" ");
-        List<String> normalWordsList = new LinkedList<>();
-        for (String word : wordsList) {
-            if (StringUtils.isNotBlank(word)) {
-                if (!Pattern.matches("[а-яё ]+", word))
-                    normalWordsList.add(word);
-                else {
-                  //  if (ra.getStopwordSet().contains(word))
-                       // normalWordsList.add(rm.getNormalForms(word).get(0));
-                }
+        String text = data.getTitle() + " " + data.getText();
+        ArrayList<String> words = new ArrayList<>(Arrays.asList(text.replaceAll("[^а-яА-ЯёЁ ]", "").toLowerCase().split(" ")));
+        words.removeIf(s -> s.equals(""));
+
+        ArrayList<String> wordsNorm = new ArrayList<>();
+        String normalForm;
+        List<ParsedWord> pwList;
+        for (String word : words) {
+            try {
+                pwList = morph.parse(word);
+            } catch (Exception e) {
+                log.warn("Can't get normal form for: " + word + ", reason: " + e.getMessage());
+                continue;
             }
-        }
-        return normalWordsList;
-    }
-
-    public List<List<String>> getShingles(List<String> wordsList, int shingleSize) {
-        List<List<String>> shingles = new LinkedList<>();
-        List<String> shingleBuf = new LinkedList<>();
-        int j = 0;
-        for (int i = 0; i < wordsList.size(); i++) {
-            if (j == shingleSize) {
-                shingles.add(shingleBuf);
-                shingleBuf = new LinkedList<>();
-                j = 0;
-                i -= (shingleSize - 1);
+            if (pwList.size() != 0)
+                normalForm = pwList.get(0).normalForm;
+            else {
+                log.error("Can't make morph analyze for: " + word);
+                continue;
             }
-            shingleBuf.add(wordsList.get(i));
-            j++;
+            wordsNorm.add(normalForm);
         }
-        return shingles;
-    }
-
-    public Integer getMinHash(List<List<String>> shingles) {
-        List<Integer> hashes = new LinkedList<>();
-        for (int i = 32; i < 132; i++) {
-            for (List<String> shingle : shingles) {
-                StringBuilder sb = new StringBuilder();
-                for (String word : shingle) {
-                    sb.append(word);
-                }
-                hashes.add(strHash(sb.toString(), i));
-            }
-        }
-        return Collections.min(hashes);
-    }
-
-    public double jacarta(Integer hash1, Integer hash2) {
-        double jacart;
-        String strHash1 = String.valueOf(hash1);
-        String strHash2 = String.valueOf(hash2);
-        int hashSize = strHash1.length();
-        int similarCount = 0;
-        for (int i = 0; i < hashSize; i++) {
-            if (strHash1.charAt(i) == strHash2.charAt(i))
-                similarCount++;
-        }
-        jacart = (double) (Math.round(((double) (similarCount) / (hashSize * 2 - similarCount)) * 100.0)) / 100;
-        return jacart;
-    }
-
-    private int strHash(String str, int k) {
-        int hash = 7;
-        for (int i = 0; i < str.length(); i++) {
-            hash = ((hash * k + (str.charAt(i))) ^ 15) % 1000000;
-        }
-        while (String.valueOf(hash).length() < 7)
-            hash *= 10;
-        return hash;
+        return wordsNorm;
     }
 }

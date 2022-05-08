@@ -152,20 +152,4 @@ public class KpRobot {
         List<NewsSiteData> dataByAuthor = dao.getArticlesByAuthor(client, "Иннокентий Кишкурно");
         log.debug("End search test");
     }
-
-    private void testMinHash(List<NewsSiteData> siteData) throws IOException {
-        TextTools textTools = new TextTools();
-        List<String> normalWords = textTools.textToNormalForm(siteData.get(2));
-        List<List<String>> shingles = textTools.getShingles(normalWords, 10);
-        Integer hash = textTools.getMinHash(shingles);
-
-        List<String> normalWords1 = textTools.textToNormalForm(siteData.get(3));
-        List<List<String>> shingles1 = textTools.getShingles(normalWords1, 10);
-        Integer hash1 = textTools.getMinHash(shingles1);
-        double jacarta = textTools.jacarta(hash, hash1);
-
-        System.out.println("For articles: \"" + siteData.get(0).getTitle() + "\" and \"" + siteData.get(1).getTitle() + "\" Jacarta coefficient is " + jacarta);
-    }
-
-
 }

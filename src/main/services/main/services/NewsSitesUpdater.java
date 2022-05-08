@@ -9,7 +9,8 @@ public class NewsSitesUpdater {
         KpRobot kpRobot = new KpRobot();
         VeRobot veRobot = new VeRobot();
 
-        veRobot.updateVe();
+
         //kpRobot.updateKp();
+        veRobot.updateVe();
     }
 }

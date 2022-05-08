@@ -8,9 +8,6 @@
     <artifactId>test</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <!--<modules>
-        <module>../jmorphy2-master</module>
-    </modules>-->
     <build>
         <plugins>
             <plugin>
@@ -24,10 +21,11 @@
         </plugins>
     </build>
     <repositories>
-        <!--<repository>
-            <id>jmorphy2</id>
-            <url>https://github.com/anti-social/jmorphy2/tree/master/jmorphy2-core/src/main/java</url>
-        </repository>-->
+        <repository>
+            <id>drxaos</id>
+            <name>mvn-repo</name>
+            <url>https://github.com/drxaos/mvn-repo/raw/master/</url>
+        </repository>
     </repositories>
 
 
@@ -80,11 +78,21 @@
             <version>2.15.0</version>
         </dependency>
 
-        <!--<dependency>
-            <groupId>company.evo.jmorphy2</groupId>
-            <artifactId>analysis-jmorphy2</artifactId>
-            <version>0.2.2-es7.9.3</version>
-        </dependency>-->
+        <dependency>
+            <groupId>company.evo</groupId>
+            <artifactId>jmorphy2-lucene</artifactId>
+            <version>0.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.noggit</groupId>
+            <artifactId>noggit</artifactId>
+            <version>0.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>21.0</version>
+        </dependency>
     </dependencies>
 
 </project>
