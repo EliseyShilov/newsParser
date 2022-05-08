@@ -1,9 +1,9 @@
 package main.tools;
 
-import main.entities.AutoSiteData;
+import main.entities.NewsSiteData;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.ru.RussianAnalyzer;
-import org.apache.lucene.morphology.russian.RussianMorphology;
+//import org.apache.lucene.morphology.russian.RussianMorphology;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class TextTools {
-    RussianMorphology rm = new RussianMorphology();
+    //RussianMorphology rm = new RussianMorphology();
     RussianAnalyzer ra = new RussianAnalyzer();
 
     public TextTools() throws IOException {
     }
 
-    public List<String> textToNormalForm(AutoSiteData data) {
+    public List<String> textToNormalForm(NewsSiteData data) {
         String bufText = data.getText();
         String[] wordsList = bufText.toLowerCase().replaceAll("[^а-яёa-z ]", "").split(" ");
         List<String> normalWordsList = new LinkedList<>();
@@ -27,8 +27,8 @@ public class TextTools {
                 if (!Pattern.matches("[а-яё ]+", word))
                     normalWordsList.add(word);
                 else {
-                    if (ra.getStopwordSet().contains(word))
-                        normalWordsList.add(rm.getNormalForms(word).get(0));
+                  //  if (ra.getStopwordSet().contains(word))
+                       // normalWordsList.add(rm.getNormalForms(word).get(0));
                 }
             }
         }

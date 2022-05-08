@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.sun.org.slf4j.internal.Logger;
 import com.sun.org.slf4j.internal.LoggerFactory;
-import main.entities.AutoSiteData;
+import main.entities.NewsSiteData;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -30,13 +30,13 @@ import java.util.Map;
 
 import static org.apache.commons.codec.digest.DigestUtils.sha256Hex;
 
-public class AutoSiteDao {
+public class NewsSiteDao {
 
-    private static final Logger log = LoggerFactory.getLogger(AutoSiteDao.class);
+    private static final Logger log = LoggerFactory.getLogger(NewsSiteDao.class);
     private static final String INDEX_NAME = "auto_sites_articles";
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-    public void saveData(RestHighLevelClient client, AutoSiteData data) {
+    public void saveData(RestHighLevelClient client, NewsSiteData data) {
         try {
             IndexRequest request = new IndexRequest(INDEX_NAME);
             if (data.getText() != null)
@@ -55,19 +55,19 @@ public class AutoSiteDao {
         }
     }
 
-    public List<AutoSiteData> getAllArticles(RestHighLevelClient client) throws IOException {
+    public List<NewsSiteData> getAllArticles(RestHighLevelClient client) throws IOException {
         return search(client, null, null);
     }
 
-    public List<AutoSiteData> getArticlesById(RestHighLevelClient client, String id) throws IOException {
+    public List<NewsSiteData> getArticlesById(RestHighLevelClient client, String id) throws IOException {
         return search(client, id, "_id");
     }
 
-    public List<AutoSiteData> getArticleByTitle(RestHighLevelClient client, String title) throws IOException {
+    public List<NewsSiteData> getArticleByTitle(RestHighLevelClient client, String title) throws IOException {
         return search(client, title, "title");
     }
 
-    public List<AutoSiteData> getArticlesByAuthor(RestHighLevelClient client, String author) throws IOException {
+    public List<NewsSiteData> getArticlesByAuthor(RestHighLevelClient client, String author) throws IOException {
         return search(client, author, "author");
     }
 
@@ -88,7 +88,7 @@ public class AutoSiteDao {
         System.out.println("Cardinality for " + field + ": " + cardinality.getValue());
     }
 
-    private List<AutoSiteData> search(RestHighLevelClient client, String content, String fieldName) throws IOException {
+    private List<NewsSiteData> search(RestHighLevelClient client, String content, String fieldName) throws IOException {
         SearchRequest sr = new SearchRequest(INDEX_NAME);
         SearchSourceBuilder ssb = new SearchSourceBuilder();
         if (content == null || fieldName == null)
@@ -100,11 +100,11 @@ public class AutoSiteDao {
         return responseToData(response);
     }
 
-    private List<AutoSiteData> responseToData(SearchResponse response) {
-        List<AutoSiteData> dataList = new ArrayList<>();
-        for (SearchHit hit : response.getHits()) {
+    private List<NewsSiteData> responseToData(SearchResponse response) {
+        List<NewsSiteData> dataList = new ArrayList<>();
+        /*for (SearchHit hit : response.getHits()) {
             Map<String, Object> sourceAsMap = hit.getSourceAsMap();
-            AutoSiteData data = new AutoSiteData();
+            NewsSiteData data = new NewsSiteData();
             dataList.add(data);
             data.setTitle((String) sourceAsMap.get("title"));
             data.setLink((String) sourceAsMap.get("link"));
@@ -118,20 +118,20 @@ public class AutoSiteDao {
                 String publicationDateStr = (String.valueOf(day).length() == 1 ? "0" + day : day) + "." + (String.valueOf(month).length() == 1 ? "0" + month : month) + "." + year;
                 data.setPublicationDate(LocalDate.parse(publicationDateStr, formatter));
             }
-            if (sourceAsMap.get("source") != null) {
+            /*if (sourceAsMap.get("source") != null) {
                 switch ((String) sourceAsMap.get("source")) {
                     case "ZR":
-                        data.setSource(AutoSiteData.Source.ZR);
+                        data.setSource(NewsSiteData.Source.ZR);
                         break;
                     case "AR":
-                        data.setSource(AutoSiteData.Source.AR);
+                        data.setSource(NewsSiteData.Source.AR);
                 }
             }
-        }
+        }*/
         return dataList;
     }
 
-    private String toJson(AutoSiteData data) throws JsonProcessingException {
+    private String toJson(NewsSiteData data) throws JsonProcessingException {
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         return ow.writeValueAsString(data);
     }
