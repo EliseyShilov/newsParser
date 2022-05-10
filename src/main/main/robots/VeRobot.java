@@ -30,6 +30,7 @@ public class VeRobot {
                 List<NewsSiteData> siteData = new ArrayList<>();
                 int pageCounter = 1;
                 for (; ; ) {
+                    log.debug("Process page: " + pageCounter);
                     HttpResponse pageResponse = Tools.getResponse(Tools.buildRequest(ToolsVe.getPageUrl(pageCounter), true), client);
                     DataListVe obj = (DataListVe) Tools.parseJson(pageResponse.getEntity().getContent(), DataListVe.class);
                     List<DataVe> dvList = obj.getData();
@@ -44,6 +45,7 @@ public class VeRobot {
                     }
                     pageCounter++;
                 }
+                //Tools.saveData(siteData);
 
                 log.debug("Ve update finished");
             } catch (Exception e) {
@@ -78,8 +80,9 @@ public class VeRobot {
         data.setTitle(dv.getTitle());
 
         List<String> normalWords = textTools.textToNormalForm(data);
+        int emotionalRating = textTools.getEmotionalRate(normalWords);
+        data.setEmotionalRating(emotionalRating);
 
+        log.info("Article: " + url + ", emotional rating: " + emotionalRating);
     }
-
-
 }

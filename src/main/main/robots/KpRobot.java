@@ -1,7 +1,6 @@
 package main.robots;
 
 import lombok.extern.log4j.Log4j;
-import main.dao.NewsSiteDao;
 import main.entities.NewsSiteAuthor;
 import main.entities.NewsSiteData;
 import main.entities.model.kp.*;
@@ -12,14 +11,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Node;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,8 +24,11 @@ import java.util.List;
 @Log4j
 public class KpRobot {
 
+    private static TextTools textTools = new TextTools();
+
     public void updateKp() {
         log.debug("Kp update started");
+        textTools.init();
 
         new Thread(() -> {
             try (CloseableHttpClient client = HttpClients.createDefault()) {
@@ -58,6 +58,7 @@ public class KpRobot {
                     if (year == lastYear)
                         lastMonthForLoop = lastMonth;
                     for (int month = 1; month <= lastMonthForLoop; month++) {
+                        log.debug("Process " + month + "." + year);
                         pageResponse = Tools.getResponse(Tools.buildRequest(ToolsKp.getPageUrl(pageCounter, year, month), false), client);
                         obj = (Feed) Tools.parseJson(pageResponse.getEntity().getContent(), Feed.class);
                         for (MetaKp meta : obj.getMeta()) {
@@ -79,14 +80,7 @@ public class KpRobot {
                         pageCounter = 1;
                     }
                 }
-
-
-                /*RestHighLevelClient restClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200)));
-                NewsSiteDao dao = new NewsSiteDao();
-
-                testMinHash(siteData);
-                testSearch(restClient, dao);
-                restClient.close();*/
+                //Tools.saveData(siteData);
 
                 log.debug("Kp update finished");
             } catch (Exception e) {
@@ -96,7 +90,7 @@ public class KpRobot {
     }
 
     private void parseArticle(CloseableHttpClient client, ChildKp ck, NewsSiteData data) throws IOException {
-        String url = "";
+        String url;
         if (ck.getId() != null)
             url = ToolsKp.getArticleUrl(ck.getId());
         else if (ck.getIdReserve() != null)
@@ -142,14 +136,19 @@ public class KpRobot {
         data.setText(text);
         data.setTitle(title);
         data.setAuthor(nsaList);
+
+        List<String> normalWords = textTools.textToNormalForm(data);
+        int emotionalRating = textTools.getEmotionalRate(normalWords);
+        data.setEmotionalRating(emotionalRating);
+        log.info("Article: " + url + ", emotional rating: " + emotionalRating);
     }
 
-    private void testSearch(RestHighLevelClient client, NewsSiteDao dao) throws IOException {
+    /*private void testSearch(RestHighLevelClient client, NewsSiteDao dao) throws IOException {
         dao.getAggregationByCount(client, "author");
         List<NewsSiteData> allArticles = dao.getAllArticles(client);
         List<NewsSiteData> dataById = dao.getArticlesById(client, "21f28a1e8de738c52bee7a8166165cf0b1a08860e3b60ab13ce76421ef292901");
         List<NewsSiteData> dataByTitle = dao.getArticleByTitle(client, "DFM");
         List<NewsSiteData> dataByAuthor = dao.getArticlesByAuthor(client, "Иннокентий Кишкурно");
         log.debug("End search test");
-    }
+    }*/
 }
