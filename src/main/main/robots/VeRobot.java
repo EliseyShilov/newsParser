@@ -57,7 +57,7 @@ public class VeRobot {
     private static void parseArticle(DataVe dv, NewsSiteData data) {
         String url;
         if (dv.getId() != null)
-            url = ToolsKp.getArticleUrl(dv.getId());
+            url = ToolsVe.getArticleUrl(dv.getId());
         else {
             log.warn("Can't get article's id!");
             return;
